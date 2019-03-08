@@ -20,9 +20,9 @@ import android.view.ViewGroup;
 public abstract class LazyLoadFragment extends Fragment {
 
     /**
-     * TAG
+     * TAG(支持自定义)
      */
-    private final String TAG = getClass().getSimpleName();
+    private String tag = getClass().getSimpleName();
 
     /**
      * 上下文
@@ -35,16 +35,6 @@ public abstract class LazyLoadFragment extends Fragment {
     protected View rootView;
 
     /**
-     * 是否启用View复用,默认开启。
-     */
-    private boolean isReuse = true;
-
-    /**
-     * Fragment是否可见
-     */
-    private boolean isVisible = false;
-
-    /**
      * 视图是否创建完成
      */
     private boolean isViewCreated = false;
@@ -55,21 +45,23 @@ public abstract class LazyLoadFragment extends Fragment {
     private boolean isLoadDataCompleted = false;
 
     /**
+     * 是否启用View复用,默认开启。
+     */
+    private boolean isReuse = true;
+
+    /**
      * 是否每次切换Fragment强制刷新数据
      */
     private boolean isForcedToRefresh = false;
 
-    // Fragment的可见状态发生变化时会被调用.
+    // Fragment的可见状态发生变化时被调用.
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-        Log.d(TAG, "-->setUserVisibleHint(boolean isVisibleToUser) = " + isVisibleToUser);
+        Log.d(tag, "-->setUserVisibleHint(boolean isVisibleToUser) = " + isVisibleToUser);
         if (isViewCreated) {
-            if (isVisible != isVisibleToUser) {
-                isVisible = isVisibleToUser;
-                onVisibleChange(isVisible);
-            }
-            if (isVisible && (!isLoadDataCompleted || isForcedToRefresh)) {
+            onVisibleChange(isVisibleToUser);
+            if (isVisibleToUser && (!isLoadDataCompleted || isForcedToRefresh)) {
                 isLoadDataCompleted = true;
                 loadData();
             }
@@ -80,13 +72,13 @@ public abstract class LazyLoadFragment extends Fragment {
     @Override
     public void onInflate(Context context, AttributeSet attrs, Bundle savedInstanceState) {
         super.onInflate(context, attrs, savedInstanceState);
-        Log.d(TAG, "-->onInflate(Context context, AttributeSet attrs, Bundle savedInstanceState)");
+        Log.d(tag, "-->onInflate(Context context, AttributeSet attrs, Bundle savedInstanceState)");
     }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        Log.d(TAG, "-->onAttach(Context context)");
+        Log.d(tag, "-->onAttach(Context context)");
         this.context = context;
     }
 
@@ -95,7 +87,13 @@ public abstract class LazyLoadFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "-->onCreate(@Nullable Bundle savedInstanceState)");
+        Log.d(tag, "-->onCreate(@Nullable Bundle savedInstanceState)");
+        if (savedInstanceState != null) {
+            isLoadDataCompleted = savedInstanceState.getBoolean("isLoadDataCompleted", false);
+            isReuse = savedInstanceState.getBoolean("isReuse", true);
+            isForcedToRefresh = savedInstanceState.getBoolean("isForcedToRefresh", false);
+            Log.d(tag, "isLoadDataCompleted = " + isLoadDataCompleted + ", isReuse = " + isReuse + ", isForcedToRefresh = " + isForcedToRefresh);
+        }
     }
 
     // 支持view的复用,防止与ViewPager使用时出现重复创建view的问题.可以设置不复用。
@@ -103,13 +101,13 @@ public abstract class LazyLoadFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
-        Log.d(TAG, "-->onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState)");
+        Log.d(tag, "-->onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState)");
         if (!isReuse || rootView == null) {
-            Log.d(TAG, "-->创建View");
+            Log.d(tag, "-->创建View");
             rootView = createView(inflater, container);
             initViews(savedInstanceState);
         } else {
-            Log.d(TAG, "-->复用View");
+            Log.d(tag, "-->复用View");
         }
         return rootView;
     }
@@ -117,7 +115,7 @@ public abstract class LazyLoadFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        Log.d(TAG, "-->onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)");
+        Log.d(tag, "-->onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)");
         isViewCreated = true;
     }
 
@@ -126,12 +124,9 @@ public abstract class LazyLoadFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        Log.d(TAG, "-->onActivityCreated(@Nullable Bundle savedInstanceState)");
+        Log.d(tag, "-->onActivityCreated(@Nullable Bundle savedInstanceState)");
         if (getUserVisibleHint()) {
-            if (!isVisible) {
-                isVisible = true;
-                onVisibleChange(true);
-            }
+            onVisibleChange(true);
             if (!isLoadDataCompleted || isForcedToRefresh) {
                 isLoadDataCompleted = true;
                 loadData();
@@ -142,71 +137,83 @@ public abstract class LazyLoadFragment extends Fragment {
     @Override
     public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
-        Log.d(TAG, "-->onViewStateRestored(@Nullable Bundle savedInstanceState)");
+        Log.d(tag, "-->onViewStateRestored(@Nullable Bundle savedInstanceState)");
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        Log.d(TAG, "-->onStart()");
+        Log.d(tag, "-->onStart()");
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "-->onResume()");
+        Log.d(tag, "-->onResume()");
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        Log.d(TAG, "-->onPause()");
+        Log.d(tag, "-->onPause()");
     }
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        Log.d(TAG, "-->onSaveInstanceState(@NonNull Bundle outState)");
+        Log.d(tag, "-->onSaveInstanceState(@NonNull Bundle outState)");
+        outState.putBoolean("isLoadDataCompleted", isLoadDataCompleted);
+        outState.putBoolean("isReuse", isReuse);
+        outState.putBoolean("isForcedToRefresh", isForcedToRefresh);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        Log.d(TAG, "-->onStop()");
+        Log.d(tag, "-->onStop()");
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        Log.d(TAG, "-->onDestroyView()");
+        Log.d(tag, "-->onDestroyView()");
         isViewCreated = false;
-        if (!isReuse) rootView = null;
+        rootView = null;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "-->onDestroy()");
-        rootView = null;
+        Log.d(tag, "-->onDestroy()");
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        Log.d(TAG, "-->onDetach()");
+        Log.d(tag, "-->onDetach()");
         context = null;
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        Log.d(TAG, "-->onConfigurationChanged(Configuration newConfig)");
+        Log.d(tag, "-->onConfigurationChanged(Configuration newConfig)");
     }
 
     @Override
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
-        Log.d(TAG, "-->onHiddenChanged(boolean hidden) = " + hidden);
+        Log.d(tag, "-->onHiddenChanged(boolean hidden) = " + hidden);
+    }
+
+    /**
+     * 设置日志TAG
+     *
+     * @param tag tag
+     */
+    public void setTag(String tag) {
+        if (tag == null) tag = getClass().getSimpleName();
+        this.tag = tag;
     }
 
     /**
@@ -233,14 +240,14 @@ public abstract class LazyLoadFragment extends Fragment {
      * @param isVisible true:不可见 -> 可见 false:可见  -> 不可见
      */
     protected void onVisibleChange(boolean isVisible) {
-        Log.d(TAG, "-->onVisibleChange(boolean isVisible) = " + isVisible);
+        Log.d(tag, "-->onVisibleChange(boolean isVisible) = " + isVisible);
     }
 
     /***
      * 支持数据懒加载并且只加载一次
      */
     protected void loadData() {
-        Log.d(TAG, "-->loadData()");
+        Log.d(tag, "-->loadData()");
     }
 
     /**
