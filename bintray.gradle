@@ -1,0 +1,161 @@
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+// load properties
+Properties properties = new Properties()
+properties.load(rootProject.file('local.properties').newDataInputStream())
+
+// read properties
+def developerId = properties.getProperty("developer.id")
+def developerName = properties.getProperty("developer.name")
+def developerEmail = properties.getProperty("developer.email")
+def bintrayUser = properties.getProperty("bintray.user")
+def bintrayKey = properties.getProperty("bintray.key")
+
+// defaultConfig
+def projectVersionName = android.defaultConfig.versionName
+
+// GlobalConfig
+def userOrgName = rootProject.ext.bintray["userOrg"]
+def repoName = rootProject.ext.bintray["repoName"]
+def groupId = rootProject.ext.bintray["groupId"]
+def projectSiteUrl = rootProject.ext.bintray["website"]
+def projectGitUrl = "${projectSiteUrl}.git"
+def projectIssuesUrl = "${projectSiteUrl}/issues"
+
+// set the maven groupId and version
+group = groupId
+version = projectVersionName
+
+// This generates POM.xml with proper parameters
+install {
+    repositories.mavenInstaller {
+        pom {
+            project {
+                packaging 'aar'
+                name projectName
+                description projectDescription
+                url projectSiteUrl
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id developerId
+                        name developerName
+                        email developerEmail
+                    }
+                }
+                scm {
+                    connection projectGitUrl
+                    developerConnection projectGitUrl
+                    url projectSiteUrl
+                }
+            }
+        }
+    }
+}
+
+// bintray configuration
+bintray {
+    user = bintrayUser
+    key = bintrayKey
+
+    // [Default: false] Whether to run this as dry-run, without deploying
+    dryRun = false
+    // [Default: false] Whether version should be auto published after an upload
+    publish = true
+    // [Default: false] Whether to override version artifacts already published
+    override = false
+
+    // Package configuration. The plugin will use the repo and name properties to check if the package already exists.
+    // In that case, there's no need to configure the other package properties (like userOrg, desc, etc).
+    pkg {
+        // Mandatory parameters:
+        repo = repoName
+        name = projectName
+        licenses = ['Apache-2.0']
+        vcsUrl = projectGitUrl
+
+        // Optional parameters:
+        // An optional organization name when the repo belongs to one of the user's orgs
+        userOrg = userOrgName
+        desc = projectDescription
+        websiteUrl = projectSiteUrl
+        issueTrackerUrl = projectIssuesUrl
+        // labels = ['android', 'library', 'jcenter', 'bintray', 'publish']
+        // publicDownloadNumbers = true
+        // Optional package-level attributes
+        // attributes = ['a': ['ay1', 'ay2'], 'b': ['bee'], c: 'cee']
+        // Optional Github repository
+        // githubRepo = 'maoqiqi/PublishDemo'
+        // Optional Github readme file
+        // githubReleaseNotesFile = 'README.md'
+
+        // Optional version descriptor
+        version {
+            // Mandatory parameters:
+            // Mandatory bintray logical version name
+            name = projectVersionName
+
+            // Optional parameters:
+            // Optional Version-specific description
+            desc = projectDescription
+            // Optional Date of the version release. 2 possible values: date in the format of 'yyyy-MM-dd'T'HH:mm:ss.SSSZZ' OR a java.util.Date instance
+            released = new Date()
+            // Optional version-level attributes
+            attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin']
+            vcsTag = 'v' + projectVersionName
+
+            // Optional configuration for GPG signing
+            /*gpg {
+                // Determines whether to GPG sign the files. The default is false
+                sign = true
+                // Optional The passphrase for GPG signing'
+                passphrase = 'passphrase'
+            }*/
+            // Optional configuration for Maven Central sync of the version
+            /*mavenCentralSync {
+                // [Default: true] Determines whether to sync the version to Maven Central.
+                sync = true
+                // OSS user token: mandatory
+                user = 'userToken'
+                // OSS user password: mandatory
+                password = 'password'
+                // Optional property. By default the staging repository is closed and artifacts are released to Maven Central.
+                // You can optionally turn this behaviour off (by puting 0 as value) and release the version manually.
+                close = '1'
+            }*/
+        }
+    }
+    configurations = ['archives']
+}
+
+// The following is the task of generating sources.jar and javadoc.jar
+
+// This generates sources.jar
+task sourcesJar(type: Jar) {
+    // Specify the source code through the from function, which is the default source
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+// Set the Javadoc
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+// This generates javadoc.jar, dependsOn here means that this task will only start after the javadoc complete.
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from javadoc.destinationDir
+    classifier = 'javadoc'
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}

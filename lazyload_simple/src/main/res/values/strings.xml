@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">懒加载</string>
+    <string name="index_1">发现音乐</string>
+    <string name="index_2">我的音乐</string>
+    <string name="index_3">朋友</string>
+    <string name="index_4">账号</string>
+</resources>
