@@ -23,7 +23,7 @@
 Download [the JARs](https://jcenter.bintray.com/com/codearms/maoqiqi/lazyload) or configure this dependency:
 
 ```
-implementation 'com.codearms.maoqiqi:lazyload:1.0.0'
+implementation 'com.codearms.maoqiqi:lazyload:1.1.0'
 ```
 
 

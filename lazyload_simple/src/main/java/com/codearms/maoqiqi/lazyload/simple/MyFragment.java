@@ -57,6 +57,7 @@ public class MyFragment extends LazyLoadFragment {
         if (getArguments() != null) {
             position = getArguments().getInt("position", 0);
         }
+        setTag(getClass().getSimpleName() + (position + 1));
         names = new String[]{getString(R.string.index_1), getString(R.string.index_2), getString(R.string.index_3), getString(R.string.index_4)};
         // 随机颜色
         Random random = new Random();
