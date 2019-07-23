@@ -62,7 +62,6 @@ public abstract class LazyLoadFragment extends Fragment {
         if (isViewCreated) {
             onVisibleChange(isVisibleToUser);
             if (isVisibleToUser && (!isLoadDataCompleted || isForcedToRefresh)) {
-                isLoadDataCompleted = true;
                 loadData();
             }
         }
@@ -128,7 +127,6 @@ public abstract class LazyLoadFragment extends Fragment {
         if (getUserVisibleHint()) {
             onVisibleChange(true);
             if (!isLoadDataCompleted || isForcedToRefresh) {
-                isLoadDataCompleted = true;
                 loadData();
             }
         }
@@ -162,6 +160,7 @@ public abstract class LazyLoadFragment extends Fragment {
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         Log.d(tag, "-->onSaveInstanceState(@NonNull Bundle outState)");
+        Log.d(tag, "isLoadDataCompleted = " + isLoadDataCompleted + ", isReuse = " + isReuse + ", isForcedToRefresh = " + isForcedToRefresh);
         outState.putBoolean("isLoadDataCompleted", isLoadDataCompleted);
         outState.putBoolean("isReuse", isReuse);
         outState.putBoolean("isForcedToRefresh", isForcedToRefresh);
@@ -212,8 +211,7 @@ public abstract class LazyLoadFragment extends Fragment {
      * @param tag tag
      */
     public void setTag(String tag) {
-        if (tag == null) tag = getClass().getSimpleName();
-        this.tag = tag;
+        if (tag != null && !tag.equals("")) this.tag = tag;
     }
 
     /**
@@ -226,7 +224,7 @@ public abstract class LazyLoadFragment extends Fragment {
     protected abstract View createView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container);
 
     /**
-     * 初始化控件
+     * 初始化控件。有些初始化必须在onCreateView中,例如setAdapter.否则,会弹出'No adapter attached; skipping layout'。
      *
      * @param savedInstanceState 保存实例状态
      */
@@ -237,7 +235,7 @@ public abstract class LazyLoadFragment extends Fragment {
     /**
      * 提供Fragment可见与不可见时回调,并可以在该函数内进行一些ui操作,如显示/隐藏加载框,不会报null异常。
      *
-     * @param isVisible true:不可见 -> 可见 false:可见  -> 不可见
+     * @param isVisible true:可见 false:不可见
      */
     protected void onVisibleChange(boolean isVisible) {
         Log.d(tag, "-->onVisibleChange(boolean isVisible) = " + isVisible);
@@ -248,6 +246,22 @@ public abstract class LazyLoadFragment extends Fragment {
      */
     protected void loadData() {
         Log.d(tag, "-->loadData()");
+    }
+
+    /**
+     * 数据加载成功调用,不调用每次打开Fragment都会重新去加载数据
+     */
+    public void loadDataCompleted() {
+        isLoadDataCompleted = true;
+    }
+
+    /**
+     * 数据是否加载成功
+     *
+     * @return true:成功 false:失败
+     */
+    public boolean isLoadDataCompleted() {
+        return isLoadDataCompleted;
     }
 
     /**
